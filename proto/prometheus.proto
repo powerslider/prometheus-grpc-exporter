@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package prometheus;
+
+// Defines the import path that should be used to import the generated package,
+// and the package name.
+option go_package = "github.com/powerslider/prometheus-grpc-api/proto;prometheus";
+
+service PrometheusService {
+  rpc ConsumeMetrics(ConsumeMetricsRequest) returns (stream MetricsResponse);
+//  rpc GetMetrics(GetMetricsRequest) returns (MetricsResponse);
+}
+
+message ConsumeMetricsRequest {
+  int32 id = 1;
+}
+
+//message GetMetricsRequest {}
+
+message MetricsResponse {
+  string result = 1;
+}

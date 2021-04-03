@@ -1,0 +1,19 @@
+version: v1beta1
+name: buf.build/johan/grpc-gateway-boilerplate
+build:
+  roots:
+    - proto
+lint:
+  use:
+    - DEFAULT
+  ignore_only:
+    PACKAGE_DIRECTORY_MATCH:
+      - prometheus.proto
+    PACKAGE_VERSION_SUFFIX:
+      - prometheus.proto
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - prometheus.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - prometheus.proto
+deps:
+  - buf.build/beta/googleapis

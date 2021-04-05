@@ -25,7 +25,7 @@ func main() {
 	in := &pb.ConsumeMetricsRequest{Id: 1}
 	stream, err := c.ConsumeMetrics(context.Background(), in)
 	if err != nil {
-		log.Fatalf("openn stream error %v", err)
+		log.Fatalf("open stream error %v", err)
 	}
 
 	client.GetMetricsResponse(stream)

@@ -13,7 +13,32 @@ services:
 
   goreplay:
     image: buger/goreplay
+    container_name: goreplay
     network_mode: "host"
     command:
       - '--input-raw=:9090'
       - '--output-stdout'
+
+  prometheus-grpc-server-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    image: prometheus-grpc-server:local
+
+  prometheus-grpc-client-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    image: prometheus-grpc-client:local
+
+  api1:
+    image: prometheus-grpc-server:local
+    container_name: api1
+
+  api2:
+    image: prometheus-grpc-server:local
+    container_name: api2
+
+  api-client:
+    image: prometheus-grpc-client:local
+    container_name: api-client

@@ -1,0 +1,15 @@
+{
+  "service": {
+    "name": "api1",
+    "tags": [
+      "prometheus-grpc-server"
+    ],
+    "port": 8080,
+    "check": {
+      "id": "grpc-healthcheck",
+      "name": "Service health status",
+      "grpc": "127.0.0.1:8080",
+      "interval": "10s"
+    }
+  }
+}

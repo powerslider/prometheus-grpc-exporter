@@ -2,7 +2,7 @@ version: '3.7'
 
 services:
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v2.26.0
     container_name: prometheus
     ports:
       - 9090:9090
@@ -10,14 +10,32 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - goreplay
 
-  goreplay:
-    image: buger/goreplay
-    container_name: goreplay
-    network_mode: "host"
-    command:
-      - '--input-raw=:9090'
-      - '--output-stdout'
+#  goreplay:
+#    image: buger/goreplay
+#    container_name: goreplay
+#    network_mode: "host"
+#    command:
+#      - '--input-raw=:9090'
+#      - '--output-stdout'
+
+  consul-server:
+    image: consul:1.9.4
+    container_name: consul-server
+    restart: always
+    volumes:
+      - ./consul:/consul/config
+    ports:
+      - "8500:8500"
+      - "8502:8502"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+    command: "agent"
+    depends_on:
+      - api1
+      - api2
 
   prometheus-grpc-server-build:
     build:
@@ -31,13 +49,29 @@ services:
       dockerfile: Dockerfile.client
     image: prometheus-grpc-client:local
 
+  goreplay-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.goreplay
+    image: goreplay:local
+
   api1:
     image: prometheus-grpc-server:local
     container_name: api1
+    ports:
+      - "8080:8080"
 
   api2:
     image: prometheus-grpc-server:local
     container_name: api2
+    ports:
+      - "8081:8080"
+
+  goreplay:
+    image: goreplay:local
+    container_name: goreplay
+    ports:
+      - "8082:8080"
 
   api-client:
     image: prometheus-grpc-client:local

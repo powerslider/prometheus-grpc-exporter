@@ -33,11 +33,15 @@ lint:
 
 build-server:
 	@echo ">>> Building ${PROJECT_NAME} gRPC server..."
-	go build -o bin/server cmd/server/main.go
+	go build -o bin/server cmd/prometheus-grpc-server/main.go
 
 build-client:
 	@echo ">>> Building ${PROJECT_NAME} gRPC client..."
-	go build -o bin/client cmd/client/main.go
+	go build -o bin/client cmd/prometheus-grpc-client/main.go
+
+build-goreplay:
+	@echo ">>> Building ${PROJECT_NAME} goreplay..."
+	go build -o bin/goreplay cmd/goreplay/main.go
 
 clean:
 	@echo ">>> Removing binaries..."

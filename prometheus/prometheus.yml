@@ -7,7 +7,7 @@ global:
     monitor: 'prometheus-monitor'
 
 remote_write:
-  - url: "http://goreplay:8082/receive"
+  - url: "http://prometheus-remote-writer:8080"
 
 # A scrape configuration containing exactly one endpoint to scrape:
 # Here it's Prometheus itself.

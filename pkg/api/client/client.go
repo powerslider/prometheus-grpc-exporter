@@ -7,7 +7,7 @@ import (
 	pb "github.com/powerslider/prometheus-grpc-exporter/proto"
 )
 
-func GetMetricsResponse(stream pb.PrometheusService_ConsumeMetricsClient) {
+func GetMetricsResponse(stream pb.PrometheusService_GetMetricsClient) {
 	//ctx := stream.Context()
 	done := make(chan bool)
 

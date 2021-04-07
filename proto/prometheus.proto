@@ -4,14 +4,13 @@ package prometheus;
 
 // Defines the import path that should be used to import the generated package,
 // and the package name.
-option go_package = "github.com/powerslider/prometheus-grpc-api/proto;prometheus";
+option go_package = "github.com/powerslider/prometheus-grpc-exporter/proto;prometheus";
 
 service PrometheusService {
-  rpc ConsumeMetrics(ConsumeMetricsRequest) returns (stream MetricsResponse);
-//  rpc GetMetrics(GetMetricsRequest) returns (MetricsResponse);
+  rpc GetMetrics(GetMetricsRequest) returns (stream MetricsResponse);
 }
 
-message ConsumeMetricsRequest {
+message GetMetricsRequest {
   int32 id = 1;
 }
 

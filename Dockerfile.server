@@ -26,6 +26,6 @@ WORKDIR /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /bin/* /
 
-EXPOSE 8080
+EXPOSE 8080 8090
 
-ENTRYPOINT [ "/prometheus-grpc-server" ]
+CMD [ "/prometheus-grpc-server" ]

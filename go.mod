@@ -11,7 +11,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/jawher/mow.cli v1.2.0
 	github.com/mbobakov/grpc-consul-resolver v1.4.3
-	github.com/prometheus/common v0.9.1
+	github.com/prometheus/common v0.9.1 // indirect
 	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414 // indirect

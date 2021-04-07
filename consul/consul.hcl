@@ -12,8 +12,6 @@ connect {
   enabled = true
 }
 
-ports {
-  grpc = 8502
-}
-
+enable_script_checks = true
+enable_local_script_checks = true
 enable_central_service_config = true

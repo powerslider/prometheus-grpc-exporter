@@ -11,7 +11,7 @@ import (
 
 type Server struct{}
 
-func (s Server) ConsumeMetrics(in *pb.ConsumeMetricsRequest, srv pb.PrometheusService_ConsumeMetricsServer) error {
+func (s Server) GetMetrics(in *pb.GetMetricsRequest, srv pb.PrometheusService_GetMetricsServer) error {
 	log.Printf("consume metrics for id : %d", in.Id)
 
 	var wg sync.WaitGroup

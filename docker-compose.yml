@@ -5,21 +5,34 @@ services:
     image: prom/prometheus:v2.26.0
     container_name: prometheus
     ports:
-      - 9090:9090
+      - "9090:9090"
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
-      - goreplay
+      - prometheus-remote-writer
+
+  fabio:
+    image: magiconair/fabio
+    ports:
+      - "9999:9999"
+      - "9998:9998"
+    volumes:
+      - ./fabio/fabio.properties:/etc/fabio/fabio.properties
+    environment:
+      SERVICE_9998_TAGS: "urlprefix-/fabio"
+    depends_on:
+      - consul-server
 
 #  goreplay:
 #    image: buger/goreplay
 #    container_name: goreplay
-#    network_mode: "host"
 #    command:
-#      - '--input-raw=:9090'
+#      - '--input-raw=:8080'
 #      - '--output-stdout'
+#    depends_on:
+#      - prometheus
 
   consul-server:
     image: consul:1.9.4
@@ -34,8 +47,8 @@ services:
       - "8600:8600/udp"
     command: "agent"
     depends_on:
-      - api1
-      - api2
+      - prometheus-grpc-server-1
+      - prometheus-grpc-server-2
 
   prometheus-grpc-server-build:
     build:
@@ -49,30 +62,32 @@ services:
       dockerfile: Dockerfile.client
     image: prometheus-grpc-client:local
 
-  goreplay-build:
+  prometheus-remote-writer:
     build:
       context: .
-      dockerfile: Dockerfile.goreplay
-    image: goreplay:local
-
-  api1:
-    image: prometheus-grpc-server:local
-    container_name: api1
-    ports:
-      - "8080:8080"
-
-  api2:
-    image: prometheus-grpc-server:local
-    container_name: api2
-    ports:
-      - "8081:8080"
-
-  goreplay:
-    image: goreplay:local
-    container_name: goreplay
+      dockerfile: Dockerfile.remotewrite
+    image: prometheus-remote-writer:local
+    container_name: prometheus-remote-writer
     ports:
       - "8082:8080"
 
-  api-client:
+  prometheus-grpc-server-1:
+    image: prometheus-grpc-server:local
+    container_name: prometheus-grpc-server-1
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+
+  prometheus-grpc-server-2:
+    image: prometheus-grpc-server:local
+    container_name: prometheus-grpc-server-2
+    ports:
+      - "8081:8080"
+      - "8091:8090"
+
+  prometheus-grpc-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
     image: prometheus-grpc-client:local
-    container_name: api-client
+    container_name: prometheus-grpc-client

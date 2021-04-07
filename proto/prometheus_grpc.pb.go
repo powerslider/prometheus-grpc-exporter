@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PrometheusServiceClient interface {
-	ConsumeMetrics(ctx context.Context, in *ConsumeMetricsRequest, opts ...grpc.CallOption) (PrometheusService_ConsumeMetricsClient, error)
+	GetMetrics(ctx context.Context, in *GetMetricsRequest, opts ...grpc.CallOption) (PrometheusService_GetMetricsClient, error)
 }
 
 type prometheusServiceClient struct {
@@ -29,12 +29,12 @@ func NewPrometheusServiceClient(cc grpc.ClientConnInterface) PrometheusServiceCl
 	return &prometheusServiceClient{cc}
 }
 
-func (c *prometheusServiceClient) ConsumeMetrics(ctx context.Context, in *ConsumeMetricsRequest, opts ...grpc.CallOption) (PrometheusService_ConsumeMetricsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &PrometheusService_ServiceDesc.Streams[0], "/prometheus.PrometheusService/ConsumeMetrics", opts...)
+func (c *prometheusServiceClient) GetMetrics(ctx context.Context, in *GetMetricsRequest, opts ...grpc.CallOption) (PrometheusService_GetMetricsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &PrometheusService_ServiceDesc.Streams[0], "/prometheus.PrometheusService/GetMetrics", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &prometheusServiceConsumeMetricsClient{stream}
+	x := &prometheusServiceGetMetricsClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -44,16 +44,16 @@ func (c *prometheusServiceClient) ConsumeMetrics(ctx context.Context, in *Consum
 	return x, nil
 }
 
-type PrometheusService_ConsumeMetricsClient interface {
+type PrometheusService_GetMetricsClient interface {
 	Recv() (*MetricsResponse, error)
 	grpc.ClientStream
 }
 
-type prometheusServiceConsumeMetricsClient struct {
+type prometheusServiceGetMetricsClient struct {
 	grpc.ClientStream
 }
 
-func (x *prometheusServiceConsumeMetricsClient) Recv() (*MetricsResponse, error) {
+func (x *prometheusServiceGetMetricsClient) Recv() (*MetricsResponse, error) {
 	m := new(MetricsResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -65,15 +65,15 @@ func (x *prometheusServiceConsumeMetricsClient) Recv() (*MetricsResponse, error)
 // All implementations should embed UnimplementedPrometheusServiceServer
 // for forward compatibility
 type PrometheusServiceServer interface {
-	ConsumeMetrics(*ConsumeMetricsRequest, PrometheusService_ConsumeMetricsServer) error
+	GetMetrics(*GetMetricsRequest, PrometheusService_GetMetricsServer) error
 }
 
 // UnimplementedPrometheusServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedPrometheusServiceServer struct {
 }
 
-func (UnimplementedPrometheusServiceServer) ConsumeMetrics(*ConsumeMetricsRequest, PrometheusService_ConsumeMetricsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ConsumeMetrics not implemented")
+func (UnimplementedPrometheusServiceServer) GetMetrics(*GetMetricsRequest, PrometheusService_GetMetricsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetMetrics not implemented")
 }
 
 // UnsafePrometheusServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -87,24 +87,24 @@ func RegisterPrometheusServiceServer(s grpc.ServiceRegistrar, srv PrometheusServ
 	s.RegisterService(&PrometheusService_ServiceDesc, srv)
 }
 
-func _PrometheusService_ConsumeMetrics_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ConsumeMetricsRequest)
+func _PrometheusService_GetMetrics_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetMetricsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(PrometheusServiceServer).ConsumeMetrics(m, &prometheusServiceConsumeMetricsServer{stream})
+	return srv.(PrometheusServiceServer).GetMetrics(m, &prometheusServiceGetMetricsServer{stream})
 }
 
-type PrometheusService_ConsumeMetricsServer interface {
+type PrometheusService_GetMetricsServer interface {
 	Send(*MetricsResponse) error
 	grpc.ServerStream
 }
 
-type prometheusServiceConsumeMetricsServer struct {
+type prometheusServiceGetMetricsServer struct {
 	grpc.ServerStream
 }
 
-func (x *prometheusServiceConsumeMetricsServer) Send(m *MetricsResponse) error {
+func (x *prometheusServiceGetMetricsServer) Send(m *MetricsResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -117,8 +117,8 @@ var PrometheusService_ServiceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ConsumeMetrics",
-			Handler:       _PrometheusService_ConsumeMetrics_Handler,
+			StreamName:    "GetMetrics",
+			Handler:       _PrometheusService_GetMetrics_Handler,
 			ServerStreams: true,
 		},
 	},

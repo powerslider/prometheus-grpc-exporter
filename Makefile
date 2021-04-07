@@ -3,7 +3,7 @@ GOLANGCI_VERSION:=1.39.0
 PROJECT_NAME:=prometheus-grpc-exporter
 GOPATH_BIN:=$(shell go env GOPATH)/bin
 
-all: clean lint generate build-server build-client
+all: clean lint generate build-server build-client build-remote-writer
 
 install:
 	# Install protobuf compilation plugins.
@@ -29,6 +29,7 @@ generate:
 	buf generate
 
 lint:
+	@echo ">>> Performing golang code linting.."
 	golangci-lint run --config=.golangci.yml
 
 build-server:
@@ -39,10 +40,10 @@ build-client:
 	@echo ">>> Building ${PROJECT_NAME} gRPC client..."
 	go build -o bin/client cmd/prometheus-grpc-client/main.go
 
-build-goreplay:
+build-remote-writer:
 	@echo ">>> Building ${PROJECT_NAME} goreplay..."
-	go build -o bin/goreplay cmd/goreplay/main.go
+	go build -o bin/prometheus-remote-writer cmd/prometheus-remote-writer/main.go
 
 clean:
-	@echo ">>> Removing binaries..."
+	@echo ">>> Removing old binaries..."
 	@rm -rf bin/*

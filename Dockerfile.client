@@ -26,4 +26,4 @@ WORKDIR /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /bin/* /
 
-ENTRYPOINT [ "/prometheus-grpc-client" ]
+CMD [ "/prometheus-grpc-client" ]

@@ -8,13 +8,15 @@ import (
 
 	cli "github.com/jawher/mow.cli"
 	_ "github.com/mbobakov/grpc-consul-resolver"
-	"github.com/powerslider/prometheus-grpc-exporter/pkg/client"
+	"github.com/powerslider/prometheus-grpc-exporter/pkg/api/client"
 	pb "github.com/powerslider/prometheus-grpc-exporter/proto"
 	"google.golang.org/grpc"
 )
 
+const appName = "prometheus-grpc-client"
+
 func main() {
-	app := cli.App("prometheus-grpc-client", "")
+	app := cli.App(appName, "")
 
 	serverHost := app.String(cli.StringOpt{
 		Name:   "server-host",
@@ -32,8 +34,8 @@ func main() {
 
 	// create stream
 	c := pb.NewPrometheusServiceClient(conn)
-	in := &pb.ConsumeMetricsRequest{Id: 1}
-	stream, err := c.ConsumeMetrics(context.Background(), in)
+	in := &pb.GetMetricsRequest{Id: 1}
+	stream, err := c.GetMetrics(context.Background(), in)
 	if err != nil {
 		log.Fatalf("open stream error %v", err)
 	}

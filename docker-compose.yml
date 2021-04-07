@@ -14,7 +14,8 @@ services:
       - prometheus-remote-writer
 
   fabio:
-    image: magiconair/fabio
+    image: fabiolb/fabio
+    container_name: fabio
     ports:
       - "9999:9999"
       - "9998:9998"
@@ -24,15 +25,6 @@ services:
       SERVICE_9998_TAGS: "urlprefix-/fabio"
     depends_on:
       - consul-server
-
-#  goreplay:
-#    image: buger/goreplay
-#    container_name: goreplay
-#    command:
-#      - '--input-raw=:8080'
-#      - '--output-stdout'
-#    depends_on:
-#      - prometheus
 
   consul-server:
     image: consul:1.9.4

@@ -6,25 +6,11 @@ services:
     container_name: prometheus
     ports:
       - "9090:9090"
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
+    command: "--config.file=/etc/prometheus/prometheus.yml"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
       - prometheus-remote-writer
-
-  fabio:
-    image: fabiolb/fabio
-    container_name: fabio
-    ports:
-      - "9999:9999"
-      - "9998:9998"
-    volumes:
-      - ./fabio/fabio.properties:/etc/fabio/fabio.properties
-    environment:
-      SERVICE_9998_TAGS: "urlprefix-/fabio"
-    depends_on:
-      - consul-server
 
   consul-server:
     image: consul:1.9.4
@@ -37,10 +23,32 @@ services:
       - "8502:8502"
       - "8600:8600/tcp"
       - "8600:8600/udp"
-    command: "agent"
+    command: "agent -advertise 192.168.99.100"
     depends_on:
       - prometheus-grpc-server-1
       - prometheus-grpc-server-2
+
+  fabio:
+    image: fabiolb/fabio:1.5.15-go1.15.5
+    container_name: fabio
+    ports:
+      - "9999:9999"
+      - "9998:9998"
+    volumes:
+      - ./fabio/fabio.properties:/etc/fabio/fabio.properties
+    environment:
+      SERVICE_9998_TAGS: "urlprefix-/fabio"
+    depends_on:
+      - consul-server
+
+  registrator:
+    image: gliderlabs/registrator:master
+    network_mode: host
+    command: "-ip 192.168.99.100 consul://192.168.99.100:8500"
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock"
+    depends_on:
+      - consul-server
 
   prometheus-grpc-server-build:
     build:

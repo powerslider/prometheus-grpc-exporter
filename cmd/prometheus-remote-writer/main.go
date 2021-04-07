@@ -25,6 +25,7 @@ func main() {
 			Path:        "/",
 			HandlerFunc: prometheus.RemoteWriteHandler,
 		},
+		httptransport.NewHealthCheckHandler(),
 	)
 
 	transport.WaitForShutdownSignal()

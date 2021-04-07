@@ -36,6 +36,7 @@ func main() {
 			Path:        "/metrics",
 			HandlerFunc: prometheus.ConsumeMetricsHandler,
 		},
+		httptransport.NewHealthCheckHandler(),
 	)
 
 	grpcServer := grpctransport.StartGRPCServer(*grpcPort, func(s *grpc.Server) {

@@ -45,7 +45,7 @@ func (c *prometheusServiceClient) GetMetrics(ctx context.Context, in *GetMetrics
 }
 
 type PrometheusService_GetMetricsClient interface {
-	Recv() (*MetricsResponse, error)
+	Recv() (*TimeSeries, error)
 	grpc.ClientStream
 }
 
@@ -53,8 +53,8 @@ type prometheusServiceGetMetricsClient struct {
 	grpc.ClientStream
 }
 
-func (x *prometheusServiceGetMetricsClient) Recv() (*MetricsResponse, error) {
-	m := new(MetricsResponse)
+func (x *prometheusServiceGetMetricsClient) Recv() (*TimeSeries, error) {
+	m := new(TimeSeries)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func _PrometheusService_GetMetrics_Handler(srv interface{}, stream grpc.ServerSt
 }
 
 type PrometheusService_GetMetricsServer interface {
-	Send(*MetricsResponse) error
+	Send(*TimeSeries) error
 	grpc.ServerStream
 }
 
@@ -104,7 +104,7 @@ type prometheusServiceGetMetricsServer struct {
 	grpc.ServerStream
 }
 
-func (x *prometheusServiceGetMetricsServer) Send(m *MetricsResponse) error {
+func (x *prometheusServiceGetMetricsServer) Send(m *TimeSeries) error {
 	return x.ServerStream.SendMsg(m)
 }
 

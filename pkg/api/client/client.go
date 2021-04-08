@@ -1,6 +1,7 @@
 package client
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 
@@ -8,20 +9,24 @@ import (
 )
 
 func GetMetricsResponse(stream pb.PrometheusService_GetMetricsClient) {
-	//ctx := stream.Context()
 	done := make(chan bool)
 
 	go func() {
 		for {
 			resp, err := stream.Recv()
 			if err == io.EOF {
-				done <- true //close(done)
+				done <- true
 				return
 			}
 			if err != nil {
-				log.Fatalf("can not receive %v", err)
+				log.Fatalf("cannot receive %v", err)
 			}
-			log.Printf("Resp received: %s", resp.Result)
+
+			currentMetric, err := json.Marshal(resp)
+			if err != nil {
+				log.Fatalf("cannot serialize time series metric to json: %v", err)
+			}
+			log.Printf("received metric: %s", currentMetric)
 		}
 	}()
 

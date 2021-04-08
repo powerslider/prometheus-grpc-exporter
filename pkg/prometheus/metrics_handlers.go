@@ -10,13 +10,15 @@ import (
 	"net/http"
 	"time"
 
+	pb "github.com/powerslider/prometheus-grpc-exporter/proto"
+
 	"github.com/golang/snappy"
 	//nolint:staticcheck
 	"github.com/golang/protobuf/proto"
 	"github.com/prometheus/prometheus/prompb"
 )
 
-var CurrentMetrics []prompb.TimeSeries
+var CurrentMetrics []*pb.TimeSeries
 
 type MetricsStatus struct {
 	Msg          string    `json:"message"`
@@ -42,24 +44,36 @@ func RemoteWriteHandler(w http.ResponseWriter, r *http.Request) {
 		metrics = append(metrics, prompb.TimeSeries{Labels: ts.Labels, Samples: samples})
 	}
 
-	resp, err := json.Marshal(metrics)
-	log.Println(string(resp))
+	payload, err := json.Marshal(metrics)
+	log.Println(string(payload))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Fatal("error serializing metrics response: ", err)
 		return
 	}
-	//TODO: call LB
+
+	resp, err := sendLBRequest(payload)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Fatal("error sending metrics to LB: ", err)
+		return
+	}
+	defer resp.Body.Close()
 
 	respondWithMetricsStatus("New metrics consumed", w)
 }
 
+func sendLBRequest(payload []byte) (*http.Response, error) {
+	resp, err := http.Post("http://fabio:9999/metrics", "application/json", bytes.NewReader(payload))
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func ConsumeMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	var metrics []prompb.TimeSeries
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r.Body)
-	reqBodyBytes := buf.Bytes()
-	log.Println(buf.String())
+	reqBodyBytes, _ := requestBodyToBytes(r)
 	err := json.Unmarshal(reqBodyBytes, &CurrentMetrics)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -68,6 +82,15 @@ func ConsumeMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(metrics)
 	respondWithMetricsStatus("New metrics processed", w)
+}
+
+func requestBodyToBytes(r *http.Request) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	_, err := buf.ReadFrom(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 // DecodeWriteRequest from an io.Reader into a prompb.WriteRequest, handling
@@ -93,13 +116,13 @@ func decodeWriteRequest(r io.Reader) (*prompb.WriteRequest, error) {
 
 func respondWithMetricsStatus(statusMessage string, w http.ResponseWriter) {
 	currentStatus := MetricsStatus{Msg: statusMessage, LastModified: time.Now()}
-	currentStatusJson, err := json.Marshal(currentStatus)
+	currentStatusJSON, err := json.Marshal(currentStatus)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Fatal("error serializing metrics status: ", err)
 		return
 	}
-	if _, err := w.Write(currentStatusJson); err != nil {
+	if _, err := w.Write(currentStatusJSON); err != nil {
 		w.WriteHeader(http.StatusCreated)
 		log.Fatal("metrics server error: ", err)
 	}

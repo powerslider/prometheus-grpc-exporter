@@ -20,7 +20,7 @@ func main() {
 
 	serverHost := app.String(cli.StringOpt{
 		Name:   "server-host",
-		Value:  "localhost:8080",
+		Value:  "localhost:8090",
 		Desc:   "Server Host Address",
 		EnvVar: "SERVER_HOST",
 	})

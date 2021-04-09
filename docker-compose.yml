@@ -25,8 +25,8 @@ services:
       - "8600:8600/udp"
     command: "agent -advertise 192.168.99.100"
     depends_on:
-      - prometheus-grpc-server-1
-      - prometheus-grpc-server-2
+      - prometheus-api-server-1
+      - prometheus-api-server-2
 
   fabio:
     image: fabiolb/fabio:1.5.15-go1.15.5
@@ -50,11 +50,11 @@ services:
     depends_on:
       - consul-server
 
-  prometheus-grpc-server-build:
+  prometheus-api-server-build:
     build:
       context: .
       dockerfile: Dockerfile.server
-    image: prometheus-grpc-server:local
+    image: prometheus-api-server:local
 
   prometheus-grpc-client-build:
     build:
@@ -62,25 +62,25 @@ services:
       dockerfile: Dockerfile.client
     image: prometheus-grpc-client:local
 
-  prometheus-remote-writer:
+  prometheus-remote-receiver:
     build:
       context: .
       dockerfile: Dockerfile.remotewrite
-    image: prometheus-remote-writer:local
-    container_name: prometheus-remote-writer
+    image: prometheus-remote-receiver:local
+    container_name: prometheus-remote-receiver
     ports:
       - "8082:8080"
 
-  prometheus-grpc-server-1:
+  prometheus-api-server-1:
     image: prometheus-grpc-server:local
     container_name: prometheus-grpc-server-1
     ports:
       - "8080:8080"
       - "8090:8090"
 
-  prometheus-grpc-server-2:
-    image: prometheus-grpc-server:local
-    container_name: prometheus-grpc-server-2
+  prometheus-api-server-2:
+    image: prometheus-api-server:local
+    container_name: prometheus-api-server-2
     ports:
       - "8081:8080"
       - "8091:8090"

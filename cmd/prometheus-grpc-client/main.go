@@ -24,6 +24,14 @@ func main() {
 		Desc:   "Server Host Address",
 		EnvVar: "SERVER_HOST",
 	})
+
+	subscribedMetric := app.String(cli.StringOpt{
+		Name:   "subscribed-metric",
+		Value:  "",
+		Desc:   "Specifically received metric",
+		EnvVar: "SUBSCRIBED_METRIC",
+	})
+
 	rand.Seed(time.Now().Unix())
 
 	// dial server
@@ -40,5 +48,5 @@ func main() {
 		log.Fatalf("open stream error %v", err)
 	}
 
-	client.GetMetricsResponse(stream)
+	client.GetMetricsResponse(stream, subscribedMetric)
 }

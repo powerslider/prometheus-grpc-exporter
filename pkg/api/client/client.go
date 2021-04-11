@@ -8,7 +8,9 @@ import (
 	pb "github.com/powerslider/prometheus-grpc-exporter/proto"
 )
 
-func GetMetricsResponse(stream pb.PrometheusService_GetMetricsClient) {
+const metricLabelName = "__name__"
+
+func GetMetricsResponse(stream pb.PrometheusService_GetMetricsClient, subscribedMetric *string) {
 	done := make(chan bool)
 
 	go func() {
@@ -22,14 +24,26 @@ func GetMetricsResponse(stream pb.PrometheusService_GetMetricsClient) {
 				log.Fatalf("cannot receive %v", err)
 			}
 
-			currentMetric, err := json.Marshal(resp)
-			if err != nil {
-				log.Fatalf("cannot serialize time series metric to json: %v", err)
+			if len(*subscribedMetric) > 0 {
+				for _, l := range resp.Labels {
+					if l.Name == metricLabelName && l.Value == *subscribedMetric {
+						outputMetric(resp)
+					}
+				}
+			} else {
+				outputMetric(resp)
 			}
-			log.Printf("received metric: %s", currentMetric)
 		}
 	}()
 
 	<-done
 	log.Printf("finished")
+}
+
+func outputMetric(resp *pb.TimeSeries) {
+	currentMetric, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatalf("cannot serialize time series metric to json: %v", err)
+	}
+	log.Printf("received metric: %s\n", currentMetric)
 }

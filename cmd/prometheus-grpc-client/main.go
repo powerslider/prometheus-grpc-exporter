@@ -48,5 +48,5 @@ func main() {
 		log.Fatalf("open stream error %v", err)
 	}
 
-	client.GetMetricsResponse(stream, subscribedMetric)
+	client.GetMetricsResponse(stream, *subscribedMetric)
 }

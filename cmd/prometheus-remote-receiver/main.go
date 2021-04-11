@@ -8,7 +8,7 @@ import (
 	cli "github.com/jawher/mow.cli"
 )
 
-const appName = "prometheus-remote-writer"
+const appName = "prometheus-remote-receiver"
 
 func main() {
 	app := cli.App(appName, "")

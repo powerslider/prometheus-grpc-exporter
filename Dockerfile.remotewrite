@@ -1,7 +1,7 @@
 FROM golang:1 as builder
 
 ENV ROOT_PROJECT=prometheus-grpc-exporter
-ENV PROJECT=prometheus-remote-writer
+ENV PROJECT=prometheus-remote-receiver
 
 ENV ORG_PATH="github.com/powerslider"
 ENV SRC_FOLDER="${GOPATH}/src/${ORG_PATH}/${ROOT_PROJECT}"
@@ -28,4 +28,4 @@ COPY --from=builder /bin/* /
 
 EXPOSE 8080
 
-CMD [ "/prometheus-remote-writer" ]
+CMD [ "/prometheus-remote-receiver" ]

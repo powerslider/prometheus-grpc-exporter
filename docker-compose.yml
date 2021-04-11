@@ -10,7 +10,7 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
-      - prometheus-remote-writer
+      - prometheus-remote-receiver
 
   consul-server:
     image: consul:1.9.4
@@ -29,7 +29,8 @@ services:
       - prometheus-api-server-2
 
   fabio:
-    image: fabiolb/fabio:1.5.15-go1.15.5
+#    image: fabiolb/fabio:1.5.15-go1.15.5
+    image: magiconair/fabio:latest
     container_name: fabio
     ports:
       - "9999:9999"
@@ -56,12 +57,6 @@ services:
       dockerfile: Dockerfile.server
     image: prometheus-api-server:local
 
-  prometheus-grpc-client-build:
-    build:
-      context: .
-      dockerfile: Dockerfile.client
-    image: prometheus-grpc-client:local
-
   prometheus-remote-receiver:
     build:
       context: .
@@ -72,8 +67,8 @@ services:
       - "8082:8080"
 
   prometheus-api-server-1:
-    image: prometheus-grpc-server:local
-    container_name: prometheus-grpc-server-1
+    image: prometheus-api-server:local
+    container_name: prometheus-api-server-1
     ports:
       - "8080:8080"
       - "8090:8090"

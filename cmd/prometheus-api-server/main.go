@@ -12,7 +12,7 @@ import (
 	cli "github.com/jawher/mow.cli"
 )
 
-const appName = "prometheus-grpc-server"
+const appName = "prometheus-api-server"
 
 func main() {
 	app := cli.App(appName, "")

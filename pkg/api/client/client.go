@@ -10,7 +10,7 @@ import (
 
 const metricLabelName = "__name__"
 
-func GetMetricsResponse(stream pb.PrometheusService_GetMetricsClient, subscribedMetric *string) {
+func GetMetricsResponse(stream pb.PrometheusService_GetMetricsClient, subscribedMetric string) {
 	done := make(chan bool)
 
 	go func() {
@@ -24,9 +24,9 @@ func GetMetricsResponse(stream pb.PrometheusService_GetMetricsClient, subscribed
 				log.Fatalf("cannot receive %v", err)
 			}
 
-			if len(*subscribedMetric) > 0 {
+			if len(subscribedMetric) > 0 {
 				for _, l := range resp.Labels {
-					if l.Name == metricLabelName && l.Value == *subscribedMetric {
+					if l.Name == metricLabelName && l.Value == subscribedMetric {
 						outputMetric(resp)
 					}
 				}

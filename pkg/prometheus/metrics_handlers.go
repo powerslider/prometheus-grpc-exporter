@@ -3,6 +3,7 @@ package prometheus
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -25,7 +26,13 @@ type MetricsStatus struct {
 	LastModified time.Time `json:"last_modified"`
 }
 
-func RemoteWriteHandler(w http.ResponseWriter, r *http.Request) {
+type Options map[string]string
+
+type MetricsHandler struct {
+	Options Options
+}
+
+func (mh *MetricsHandler) RemoteWriteHandler(w http.ResponseWriter, r *http.Request) {
 	req, err := decodeWriteRequest(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -52,7 +59,7 @@ func RemoteWriteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := sendLBRequest(payload)
+	resp, err := sendLBRequest(payload, mh.Options)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Fatal("error sending metrics to LB: ", err)
@@ -63,15 +70,16 @@ func RemoteWriteHandler(w http.ResponseWriter, r *http.Request) {
 	respondWithMetricsStatus("New metrics consumed", w)
 }
 
-func sendLBRequest(payload []byte) (*http.Response, error) {
-	resp, err := http.Post("http://fabio:9999/metrics", "application/json", bytes.NewReader(payload))
+func sendLBRequest(payload []byte, options Options) (*http.Response, error) {
+	url := fmt.Sprintf("http://%s/metrics", options["lb_host"])
+	resp, err := http.Post(url, "application/json", bytes.NewReader(payload))
 	if err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
 
-func ConsumeMetricsHandler(w http.ResponseWriter, r *http.Request) {
+func (mh *MetricsHandler) ConsumeMetricsHandler(w http.ResponseWriter, r *http.Request) {
 	reqBodyBytes, _ := requestBodyToBytes(r)
 	err := json.Unmarshal(reqBodyBytes, &CurrentMetrics)
 	if err != nil {

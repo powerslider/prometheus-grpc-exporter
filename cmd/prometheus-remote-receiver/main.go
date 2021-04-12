@@ -20,10 +20,22 @@ func main() {
 		EnvVar: "APP_HTTP_PORT",
 	})
 
+	lbHost := app.String(cli.StringOpt{
+		Name:   "lb-host",
+		Value:  "fabio:9999",
+		Desc:   "Load Balancer Host",
+		EnvVar: "LB_HOST",
+	})
+
+	mh := prometheus.MetricsHandler{
+		Options: map[string]string{
+			"lb_host": *lbHost,
+		},
+	}
 	httpServer := httptransport.StartHTTPServer(*httpPort,
 		httptransport.Handler{
 			Path:        "/",
-			HandlerFunc: prometheus.RemoteWriteHandler,
+			HandlerFunc: mh.RemoteWriteHandler,
 		},
 		httptransport.NewHealthCheckHandler(),
 	)

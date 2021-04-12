@@ -31,10 +31,12 @@ func main() {
 		EnvVar: "APP_HTTP_PORT",
 	})
 
+	mh := prometheus.MetricsHandler{}
+
 	httpServer := httptransport.StartHTTPServer(*httpPort,
 		httptransport.Handler{
 			Path:        "/metrics",
-			HandlerFunc: prometheus.ConsumeMetricsHandler,
+			HandlerFunc: mh.ConsumeMetricsHandler,
 		},
 		httptransport.NewHealthCheckHandler(),
 	)

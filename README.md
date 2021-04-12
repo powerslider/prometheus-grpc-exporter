@@ -1,7 +1,7 @@
 # Prometheus gRPC Exporter Demo
 
 ## Architecture
-![image](./architecture.png)
+![image](images/architecture.png)
 
 ## Deployment
 
@@ -37,9 +37,21 @@ make generate
 
 ### Docker-compose Setup
 
+**Step 1.** Run `docker-compose` to setup everything:
 ```shell script
 docker-compose up -d
 ```
+**Step 2.** Open http://localhost:8500 to monitor Consul web UI.
+![image](images/consul.png)
+
+**Step 3.** Open http://localhost:9998 to monitor Fabio web UI.
+![image](images/fabio.png)
+
+**Step 4.** Check the logs of `prometheus-grpc-client` in order to see Prometheus metrics printed to stdout:
+
+```shell script
+docker-compose logs --follow prometheus-grpc-client
+``` 
 
 ## License
 

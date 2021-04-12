@@ -86,3 +86,6 @@ services:
       dockerfile: Dockerfile.client
     image: prometheus-grpc-client:local
     container_name: prometheus-grpc-client
+    depends_on:
+      - prometheus-api-server-1
+      - prometheus-api-server-2

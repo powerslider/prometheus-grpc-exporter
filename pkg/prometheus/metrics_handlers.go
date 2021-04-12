@@ -72,7 +72,6 @@ func sendLBRequest(payload []byte) (*http.Response, error) {
 }
 
 func ConsumeMetricsHandler(w http.ResponseWriter, r *http.Request) {
-	var metrics []prompb.TimeSeries
 	reqBodyBytes, _ := requestBodyToBytes(r)
 	err := json.Unmarshal(reqBodyBytes, &CurrentMetrics)
 	if err != nil {
@@ -80,7 +79,7 @@ func ConsumeMetricsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("error deserializing metrics response: ", err)
 		return
 	}
-	log.Println(metrics)
+	log.Println(CurrentMetrics)
 	respondWithMetricsStatus("New metrics processed", w)
 }
 

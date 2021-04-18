@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/api/server"
-	"github.com/powerslider/prometheus-grpc-exporter/pkg/prometheus"
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/transport"
 	grpctransport "github.com/powerslider/prometheus-grpc-exporter/pkg/transport/grpc"
 	httptransport "github.com/powerslider/prometheus-grpc-exporter/pkg/transport/http"
+	"github.com/powerslider/prometheus-grpc-exporter/pkg/transport/tcp"
 	pb "github.com/powerslider/prometheus-grpc-exporter/proto"
 	"google.golang.org/grpc"
 
@@ -20,30 +20,35 @@ func main() {
 	grpcPort := app.String(cli.StringOpt{
 		Name:   "grpc-port",
 		Value:  "8090",
-		Desc:   "Port to listen on",
+		Desc:   "gRPC Port to listen on",
 		EnvVar: "APP_GRPC_PORT",
 	})
 
 	httpPort := app.String(cli.StringOpt{
 		Name:   "http-port",
-		Value:  "8080",
-		Desc:   "Port to listen on",
+		Value:  "8081",
+		Desc:   "HTTP Port to listen on",
 		EnvVar: "APP_HTTP_PORT",
 	})
 
-	mh := prometheus.MetricsHandler{}
+	tcpPort := app.String(cli.StringOpt{
+		Name:   "tcp-port",
+		Value:  "8070",
+		Desc:   "TCP Port to listen on",
+		EnvVar: "APP_TCP_PORT",
+	})
 
 	httpServer := httptransport.StartHTTPServer(*httpPort,
-		httptransport.Handler{
-			Path:        "/metrics",
-			HandlerFunc: mh.ConsumeMetricsHandler,
-		},
 		httptransport.NewHealthCheckHandler(),
 	)
 
+	apiServer := &server.Server{}
 	grpcServer := grpctransport.StartGRPCServer(*grpcPort, func(s *grpc.Server) {
-		pb.RegisterPrometheusServiceServer(s, server.Server{})
+		pb.RegisterPrometheusServiceServer(s, apiServer)
 	})
+
+	tcpServer := tcp.NewTCPServer(*tcpPort)
+	tcpServer.Accept(apiServer.ProcessMetrics)
 
 	transport.WaitForShutdownSignal()
 

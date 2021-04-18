@@ -3,7 +3,7 @@ GOLANGCI_VERSION:=1.39.0
 PROJECT_NAME:=prometheus-grpc-exporter
 GOPATH_BIN:=$(shell go env GOPATH)/bin
 
-all: clean lint proto-lint build-server build-client build-remote-receiver
+all: clean lint proto-lint build-server build-client build-remote-receiver build-forwarder
 
 install:
 	# Install protobuf compilation plugins.
@@ -43,6 +43,10 @@ build-client:
 build-remote-receiver:
 	@echo ">>> Building ${PROJECT_NAME} prometheus-remote-receiver..."
 	go build -o bin/remote-receiver cmd/prometheus-remote-receiver/main.go
+
+build-forwarder:
+	@echo ">>> Building ${PROJECT_NAME} tcp-forwarder..."
+	go build -o bin/forwarder cmd/tcp-forwarder/main.go
 
 clean:
 	@echo ">>> Removing old binaries..."

@@ -29,3 +29,7 @@ message TimeSeries {
   repeated Sample samples = 2;
 }
 
+message MetricsBatch {
+  repeated TimeSeries timeSeries = 1;
+}
+

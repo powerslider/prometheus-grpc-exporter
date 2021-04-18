@@ -50,11 +50,11 @@ func deserializeWriteRequest(reqBuf []byte) (*prompb.WriteRequest, error) {
 	return &req, nil
 }
 func deserializeMetrics(inputMetrics []*prompb.TimeSeries) *pb.MetricsBatch {
-	metrics := make([]*pb.TimeSeries, len(inputMetrics))
+	metrics := make([]*pb.TimeSeries, 0)
 	for _, ts := range inputMetrics {
-		labels := make([]*pb.Label, len(ts.Labels))
+		labels := make([]*pb.Label, 0)
 		for _, l := range ts.Labels {
-			if l.Name == "null" || l.Value == "null" {
+			if l.Name == "" || l.Value == "" {
 				continue
 			}
 			labels = append(labels, &pb.Label{
@@ -62,7 +62,7 @@ func deserializeMetrics(inputMetrics []*prompb.TimeSeries) *pb.MetricsBatch {
 				Value: l.Value,
 			})
 		}
-		samples := make([]*pb.Sample, len(ts.Samples))
+		samples := make([]*pb.Sample, 0)
 		for _, s := range ts.Samples {
 			if math.IsNaN(s.Value) {
 				continue
@@ -71,6 +71,9 @@ func deserializeMetrics(inputMetrics []*prompb.TimeSeries) *pb.MetricsBatch {
 				Value:     s.Value,
 				Timestamp: s.Timestamp,
 			})
+		}
+		if len(labels) == 0 || len(samples) == 0 {
+			continue
 		}
 		metrics = append(metrics, &pb.TimeSeries{Labels: labels, Samples: samples})
 	}

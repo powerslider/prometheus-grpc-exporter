@@ -8,17 +8,17 @@ import (
 
 type ServerProcessor func(conn net.Conn)
 
-type server struct {
+type Server struct {
 	port string
 }
 
-func NewTCPServer(port string) *server {
-	return &server{
+func NewTCPServer(port string) *Server {
+	return &Server{
 		port: port,
 	}
 }
 
-func (s *server) Accept(serverProcessingFunc ServerProcessor) {
+func (s *Server) Accept(serverProcessingFunc ServerProcessor) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", s.port))
 	if err != nil {
 		log.Fatalf("Failed to setup listener: %v", err)
@@ -33,5 +33,4 @@ func (s *server) Accept(serverProcessingFunc ServerProcessor) {
 		log.Printf("Accepted connection from %v\n", conn.RemoteAddr().String())
 		serverProcessingFunc(conn)
 	}
-
 }

@@ -34,7 +34,6 @@ func (mh *MetricsHandler) RemoteWriteHandler(w http.ResponseWriter, r *http.Requ
 	data, err := req.Marshal()
 	if err != nil {
 		log.Fatal("cannot marshal proto message to binary: %w", err)
-
 	}
 	mh.Store = data
 	respondWithMetricsStatus("New metrics consumed", w)

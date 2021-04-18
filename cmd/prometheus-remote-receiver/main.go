@@ -10,7 +10,9 @@ import (
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/transport/tcp"
 )
 
-const appName = "prometheus-remote-receiver"
+const (
+	appName = "prometheus-remote-receiver"
+)
 
 func main() {
 	app := cli.App(appName, "")

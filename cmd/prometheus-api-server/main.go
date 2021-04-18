@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/api/server"
+	"github.com/powerslider/prometheus-grpc-exporter/pkg/storage"
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/transport"
 	grpctransport "github.com/powerslider/prometheus-grpc-exporter/pkg/transport/grpc"
 	httptransport "github.com/powerslider/prometheus-grpc-exporter/pkg/transport/http"
@@ -12,7 +13,10 @@ import (
 	cli "github.com/jawher/mow.cli"
 )
 
-const appName = "prometheus-api-server"
+const (
+	appName           = "prometheus-api-server"
+	appStorageDataDir = "/tmp/metrics_store"
+)
 
 func main() {
 	app := cli.App(appName, "")
@@ -38,14 +42,18 @@ func main() {
 		EnvVar: "APP_TCP_PORT",
 	})
 
-	httpServer := httptransport.StartHTTPServer(*httpPort,
-		httptransport.NewHealthCheckHandler(),
-	)
-
-	apiServer := &server.Server{}
+	db, err := storage.NewPersistence(appStorageDataDir)
+	if err != nil {
+		panic(err)
+	}
+	apiServer := server.NewAPIServer(db)
 	grpcServer := grpctransport.StartGRPCServer(*grpcPort, func(s *grpc.Server) {
 		pb.RegisterPrometheusServiceServer(s, apiServer)
 	})
+
+	httpServer := httptransport.StartHTTPServer(*httpPort,
+		httptransport.NewHealthCheckHandler(),
+	)
 
 	tcpServer := tcp.NewTCPServer(*tcpPort)
 	tcpServer.Accept(apiServer.ProcessMetrics)

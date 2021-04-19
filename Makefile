@@ -45,8 +45,8 @@ build-remote-receiver:
 	go build -o bin/remote-receiver cmd/prometheus-remote-receiver/main.go
 
 build-forwarder:
-	@echo ">>> Building ${PROJECT_NAME} tcp-forwarder..."
-	go build -o bin/forwarder cmd/tcp-forwarder/main.go
+	@echo ">>> Building ${PROJECT_NAME} metrics-forwarder..."
+	go build -o bin/forwarder cmd/metrics-forwarder/main.go
 
 clean:
 	@echo ">>> Removing old binaries..."

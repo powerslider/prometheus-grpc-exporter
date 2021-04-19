@@ -13,17 +13,18 @@ services:
 #    depends_on:
 #      - prometheus-remote-receiver
 
-#  consul-server:
-#    image: consul:1.9.4
-#    container_name: consul-server
-#    restart: always
-#    volumes:
-#      - ./consul:/consul/config
-#    ports:
-#      - "8500:8500"
-#      - "8502:8502"
-#      - "8600:8600/tcp"
-#      - "8600:8600/udp"
+  consul-server:
+    image: consul:1.9.4
+    container_name: consul-server
+    restart: always
+    volumes:
+      - ./consul:/consul/config
+    ports:
+      - "8500:8500"
+      - "8502:8502"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+    command: "agent"
 #    command: "agent -advertise 192.168.99.100"
 #    depends_on:
 #      - prometheus-api-server-1
@@ -67,7 +68,7 @@ services:
     ports:
       - "8082:8080"
     depends_on:
-      - tcp-forwarder
+      - metrics-forwarder
 
   prometheus-api-server-1:
     image: prometheus-api-server:local
@@ -85,12 +86,12 @@ services:
       - "8091:8090"
       - "8071:8070"
 
-  tcp-forwarder:
+  metrics-forwarder:
     build:
       context: .
       dockerfile: Dockerfile.forwarder
-    image: tcp-forwarder:local
-    container_name: tcp-forwarder
+    image: metrics-forwarder:local
+    container_name: metrics-forwarder
     depends_on:
       - prometheus-api-server-1
       - prometheus-api-server-2

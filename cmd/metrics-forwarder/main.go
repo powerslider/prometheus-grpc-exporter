@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	appName = "prometheus-remote-receiver"
+	appName = "metrics-forwarder"
 )
 
 func main() {
@@ -21,11 +21,11 @@ func main() {
 
 	remoteAddr := app.String(cli.StringOpt{
 		Name:   "remote-addr",
-		Value:  "prometheus-api-server-1:8070",
+		Value:  "prometheus-api-server",
 		Desc:   "Remote Address",
 		EnvVar: "FORWARD_REMOTE_ADDR",
 	})
 
-	forwarder := tcp.NewTCPForwarder(*localPort, *remoteAddr)
+	forwarder := tcp.NewTCPForwarder(appName, *localPort, *remoteAddr)
 	forwarder.Accept()
 }

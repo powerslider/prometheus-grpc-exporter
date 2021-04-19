@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"time"
@@ -10,32 +9,39 @@ import (
 	"google.golang.org/grpc"
 )
 
-func StartGRPCServer(port string, serviceServerRegistrarFunc func(*grpc.Server)) *grpc.Server {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+type Server struct {
+	Name           string
+	Port           string
+	Listener       net.Listener
+	serverInstance *grpc.Server
+}
+
+func NewGRPCServer(name string, port string, listener net.Listener) *Server {
+	return &Server{
+		Name:           name,
+		Port:           port,
+		Listener:       listener,
+		serverInstance: grpc.NewServer(),
 	}
+}
 
-	s := grpc.NewServer()
-	serviceServerRegistrarFunc(s)
-
+func (s *Server) Start(serviceServerRegistrarFunc func(*grpc.Server)) {
+	serviceServerRegistrarFunc(s.serverInstance)
 	go func() {
-		if err := s.Serve(lis); err != nil {
+		if err := s.serverInstance.Serve(s.Listener); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
-	log.Printf("[Start] gRPC server on port %s started\n", port)
-
-	return s
+	log.Printf("[Start] %s gRPC server on port %s started\n", s.Name, s.Port)
 }
 
-func ShutdownGRPCServer(appName string, server *grpc.Server) {
-	log.Printf("[Shutdown] %s gRPC server is shutting down\n", appName)
+func (s *Server) Shutdown() {
+	log.Printf("[Shutdown] %s gRPC server is shutting down\n", s.Name)
 
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if server != nil {
-		server.GracefulStop()
+	if s.serverInstance != nil {
+		s.serverInstance.GracefulStop()
 	}
 }

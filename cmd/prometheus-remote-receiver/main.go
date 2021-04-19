@@ -24,16 +24,16 @@ func main() {
 		EnvVar: "APP_HTTP_PORT",
 	})
 
-	tcpForwarderAddr := app.String(cli.StringOpt{
-		Name:   "tcp-forwarder-addr",
-		Value:  "tcp-forwarder:9999",
-		Desc:   "TCP Forwarder Address",
-		EnvVar: "TCP_FORWARDER_ADDR",
+	metricsForwarderAddr := app.String(cli.StringOpt{
+		Name:   "metrics-forwarder-addr",
+		Value:  "metrics-forwarder:9999",
+		Desc:   "Metrics Forwarder Address",
+		EnvVar: "METRICS_FORWARDER_ADDR",
 	})
 
 	mh := prometheus.NewMetricsHandler(
 		prometheus.Options{
-			"tcp_forwarder_addr": *tcpForwarderAddr,
+			"tcp_forwarder_addr": *metricsForwarderAddr,
 		},
 		prometheus.MetricsStore{},
 	)
@@ -46,12 +46,14 @@ func main() {
 		httptransport.NewHealthCheckHandler(),
 	)
 
-	tcpClient := tcp.NewTCPClient(*tcpForwarderAddr)
+	tcpClient := tcp.NewTCPClient(*metricsForwarderAddr)
 
 	tcpClient.Connect(func(conn net.Conn) {
-		if len(mh.Store) > 0 {
-			conn.Write(mh.Store)
-			mh.Store = prometheus.MetricsStore{}
+		for {
+			if len(mh.Store) > 0 {
+				conn.Write(mh.Store)
+				mh.Store = prometheus.MetricsStore{}
+			}
 		}
 	})
 

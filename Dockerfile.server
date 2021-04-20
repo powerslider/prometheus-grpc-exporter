@@ -25,6 +25,7 @@ FROM scratch
 WORKDIR /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /bin/* /
+COPY --from=builder /bin/* /
 
 EXPOSE 8070 8080 8090
 

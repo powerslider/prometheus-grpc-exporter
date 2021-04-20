@@ -38,13 +38,14 @@ func main() {
 		prometheus.MetricsStore{},
 	)
 
-	httpServer := httptransport.StartHTTPServer(*httpPort,
+	httpServer := httptransport.NewHTTPServer(appName, *httpPort,
 		httptransport.Handler{
 			Path:        "/",
 			HandlerFunc: mh.RemoteWriteHandler,
 		},
 		httptransport.NewHealthCheckHandler(),
 	)
+	httpServer.Start()
 
 	tcpClient := tcp.NewTCPClient(*metricsForwarderAddr)
 
@@ -58,5 +59,6 @@ func main() {
 	})
 
 	transport.WaitForShutdownSignal()
-	httptransport.ShutdownHTTPServer(appName, httpServer)
+
+	httpServer.Shutdown()
 }

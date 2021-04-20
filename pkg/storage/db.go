@@ -79,7 +79,7 @@ func linkToLatestSymlink(latestSymlinkFileName string, fileName string) error {
 
 func createDataDir(dirPath string) error {
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
+		if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
 			return err
 		}
 	}

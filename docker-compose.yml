@@ -7,84 +7,30 @@ services:
     ports:
       - "9090:9090"
     command: "--config.file=/etc/prometheus/prometheus.yml"
-    network_mode: host
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-#    depends_on:
-#      - prometheus-remote-receiver
+    networks:
+      - dataplane
+    depends_on:
+      - prometheus-remote-receiver
 
   consul-server:
-    image: consul:1.9.4
+    image: consul:1.9.5
     container_name: consul-server
     restart: always
     volumes:
       - ./consul:/consul/config
+    networks:
+      - dataplane
     ports:
       - "8500:8500"
       - "8502:8502"
       - "8600:8600/tcp"
       - "8600:8600/udp"
     command: "agent"
-#    command: "agent -advertise 192.168.99.100"
-#    depends_on:
-#      - prometheus-api-server-1
-#      - prometheus-api-server-2
-
-#  fabio:
-##    image: fabiolb/fabio:1.5.15-go1.15.5
-#    image: magiconair/fabio:latest
-#    container_name: fabio
-#    ports:
-#      - "9999:9999"
-#      - "9998:9998"
-#    volumes:
-#      - ./fabio/fabio.properties:/etc/fabio/fabio.properties
-#    environment:
-#      SERVICE_9998_TAGS: "urlprefix-/fabio"
-#    depends_on:
-#      - consul-server
-#
-#  registrator:
-#    image: gliderlabs/registrator:master
-#    network_mode: host
-#    command: "-ip 192.168.99.100 consul://192.168.99.100:8500"
-#    volumes:
-#      - "/var/run/docker.sock:/tmp/docker.sock"
-#    depends_on:
-#      - consul-server
-
-  prometheus-api-server-build:
-    build:
-      context: .
-      dockerfile: Dockerfile.server
-    image: prometheus-api-server:local
-
-  prometheus-remote-receiver:
-    build:
-      context: .
-      dockerfile: Dockerfile.remotewrite
-    image: prometheus-remote-receiver:local
-    container_name: prometheus-remote-receiver
-    ports:
-      - "8082:8080"
     depends_on:
-      - metrics-forwarder
-
-  prometheus-api-server-1:
-    image: prometheus-api-server:local
-    container_name: prometheus-api-server-1
-    ports:
-      - "8080:8080"
-      - "8090:8090"
-      - "8070:8070"
-
-  prometheus-api-server-2:
-    image: prometheus-api-server:local
-    container_name: prometheus-api-server-2
-    ports:
-      - "8081:8080"
-      - "8091:8090"
-      - "8071:8070"
+      - prometheus-api-server-1
+      - prometheus-api-server-2
 
   metrics-forwarder:
     build:
@@ -92,16 +38,74 @@ services:
       dockerfile: Dockerfile.forwarder
     image: metrics-forwarder:local
     container_name: metrics-forwarder
+    environment:
+      FORWARD_REMOTE_ADDRESSES: "prometheus-api-server-1;prometheus-api-server-2"
+      CONSUL_HTTP_ADDR: "consul-server:8500"
+    networks:
+      - dataplane
+    ports:
+      - "8083:8080"
     depends_on:
       - prometheus-api-server-1
       - prometheus-api-server-2
 
-  prometheus-grpc-client:
+  prometheus-remote-receiver:
     build:
       context: .
-      dockerfile: Dockerfile.client
-    image: prometheus-grpc-client:local
-    container_name: prometheus-grpc-client
+      dockerfile: Dockerfile.remotewrite
+    image: prometheus-remote-receiver:local
+    container_name: prometheus-remote-receiver
+    networks:
+      - dataplane
+    ports:
+      - "8080:8080"
     depends_on:
-      - prometheus-api-server-1
-      - prometheus-api-server-2
+      - metrics-forwarder
+
+  prometheus-api-server-build:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    image: prometheus-api-server:local
+
+  prometheus-api-server-1:
+    image: prometheus-api-server:local
+    container_name: prometheus-api-server-1
+    environment:
+      APP_INSTANCE_NAME: "prometheus-api-server-1"
+      APP_INSTANCE_DATA_DIR: "/tmp/metrics-store-1"
+      CONSUL_HTTP_ADDR: "consul-server:8500"
+    networks:
+      - dataplane
+    ports:
+      - "8081:8080"
+      - "8091:8090"
+      - "8071:8070"
+
+  prometheus-api-server-2:
+    image: prometheus-api-server:local
+    container_name: prometheus-api-server-2
+    environment:
+      APP_INSTANCE_NAME: "prometheus-api-server-2"
+      APP_INSTANCE_DATA_DIR: "/tmp/metrics-store-2"
+      CONSUL_HTTP_ADDR: "consul-server:8500"
+    networks:
+      - dataplane
+    ports:
+      - "8082:8080"
+      - "8092:8090"
+      - "8072:8070"
+
+#  prometheus-grpc-client:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.client
+#    image: prometheus-grpc-client:local
+#    container_name: prometheus-grpc-client
+#    depends_on:
+#      - prometheus-api-server-1
+#      - prometheus-api-server-2
+
+networks:
+  dataplane:
+    driver: bridge

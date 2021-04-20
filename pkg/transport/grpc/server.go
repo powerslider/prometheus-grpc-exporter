@@ -16,17 +16,18 @@ type Server struct {
 	serverInstance *grpc.Server
 }
 
-func NewGRPCServer(name string, port string, listener net.Listener) *Server {
-	return &Server{
+func NewGRPCServer(name string, port string, listener net.Listener, serviceServerRegistrarFunc func(*grpc.Server)) *Server {
+	s := &Server{
 		Name:           name,
 		Port:           port,
 		Listener:       listener,
 		serverInstance: grpc.NewServer(),
 	}
+	serviceServerRegistrarFunc(s.serverInstance)
+	return s
 }
 
-func (s *Server) Start(serviceServerRegistrarFunc func(*grpc.Server)) {
-	serviceServerRegistrarFunc(s.serverInstance)
+func (s *Server) Start() {
 	go func() {
 		if err := s.serverInstance.Serve(s.Listener); err != nil {
 			log.Fatalf("failed to serve: %v", err)

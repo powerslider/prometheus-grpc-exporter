@@ -5,26 +5,30 @@ import (
 	"log"
 	"net"
 
+	"github.com/powerslider/prometheus-grpc-exporter/pkg/sd"
+
 	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/consul/connect"
 )
 
 type Forwarder struct {
-	Name       string
-	LocalAddr  string
-	RemoteAddr string
+	Name            string
+	LocalAddr       string
+	RemoteAddresses []string
+	HealtcheckAddr  string
 }
 
-func NewTCPForwarder(name string, localAddr string, remoteAddr string) *Forwarder {
+func NewTCPForwarder(name string, localAddr string, remoteAddresses []string, healthcheckAddr string) *Forwarder {
 	return &Forwarder{
-		Name:       name,
-		LocalAddr:  localAddr,
-		RemoteAddr: remoteAddr,
+		Name:            name,
+		LocalAddr:       localAddr,
+		RemoteAddresses: remoteAddresses,
+		HealtcheckAddr:  healthcheckAddr,
 	}
 }
 
-func (f *Forwarder) forward(serverConn net.Conn, consulService *connect.Service, consulClient *api.Client) {
-	client := NewTCPClient(f.RemoteAddr)
+func (f *Forwarder) forward(serverConn net.Conn, remoteAddr string, consulService *connect.Service, consulClient *api.Client) {
+	client := NewTCPClient(remoteAddr)
 	client.ConsulConnect(consulService, consulClient, func(clientConn net.Conn) {
 		log.Printf("Forwarding from %v to %v\n", serverConn.LocalAddr(), clientConn.RemoteAddr())
 		go func() {
@@ -47,13 +51,14 @@ func (f *Forwarder) Accept() {
 		return
 	}
 	server := NewTCPServer(f.Name, f.LocalAddr, listener)
-	// Create a Consul API client
-	consulClient, _ := api.NewClient(api.DefaultConfig())
-
-	consulService, _ := connect.NewService(f.Name, consulClient)
-	defer consulService.Close()
+	consulService, err := sd.NewConsulRegistration(f.Name, f.HealtcheckAddr)
+	if err != nil {
+		log.Fatalf("Error registering %s with Consul server: %v", f.Name, err)
+	}
 
 	server.Accept(func(conn net.Conn) {
-		go f.forward(conn, consulService, consulClient)
+		for _, address := range f.RemoteAddresses {
+			go f.forward(conn, address, consulService.Service, consulService.Client)
+		}
 	})
 }

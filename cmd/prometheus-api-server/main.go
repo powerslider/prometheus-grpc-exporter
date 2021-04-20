@@ -1,12 +1,15 @@
 package main
 
 import (
-	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/connect"
+	"fmt"
+
+	"github.com/powerslider/prometheus-grpc-exporter/pkg/sd"
+
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/api/server"
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/storage"
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/transport"
 	grpctransport "github.com/powerslider/prometheus-grpc-exporter/pkg/transport/grpc"
+	httptransport "github.com/powerslider/prometheus-grpc-exporter/pkg/transport/http"
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/transport/tcp"
 	pb "github.com/powerslider/prometheus-grpc-exporter/proto"
 	"google.golang.org/grpc"
@@ -15,12 +18,19 @@ import (
 )
 
 const (
-	appName = "prometheus-api-server"
+	defaultAppName = "prometheus-api-server"
+	defaultDataDir = "/tmp/metrics_store"
 )
 
 func main() {
-	app := cli.App(appName, "")
+	app := cli.App(defaultAppName, "")
 
+	appInstanceName := app.String(cli.StringOpt{
+		Name:   "app-name",
+		Value:  defaultAppName,
+		Desc:   "Application Instance Name",
+		EnvVar: "APP_INSTANCE_NAME",
+	})
 	grpcPort := app.String(cli.StringOpt{
 		Name:   "grpc-port",
 		Value:  "8090",
@@ -28,12 +38,12 @@ func main() {
 		EnvVar: "APP_GRPC_PORT",
 	})
 
-	//httpPort := app.String(cli.StringOpt{
-	//	Name:   "http-port",
-	//	Value:  "8081",
-	//	Desc:   "HTTP Port to listen on",
-	//	EnvVar: "APP_HTTP_PORT",
-	//})
+	httpPort := app.String(cli.StringOpt{
+		Name:   "http-port",
+		Value:  "8080",
+		Desc:   "HTTP Port to listen on",
+		EnvVar: "APP_HTTP_PORT",
+	})
 
 	tcpPort := app.String(cli.StringOpt{
 		Name:   "tcp-port",
@@ -44,16 +54,21 @@ func main() {
 
 	dataDir := app.String(cli.StringOpt{
 		Name:   "data-dir",
-		Value:  "/tmp/metrics_store",
-		Desc:   "Storage directory for metrics",
-		EnvVar: "APP_DATA_DIR",
+		Value:  defaultDataDir,
+		Desc:   "Storage directory for scraped Prometheus metrics",
+		EnvVar: "APP_INSTANCE_DATA_DIR",
 	})
 
-	// Create a Consul API client
-	consulClient, _ := api.NewClient(api.DefaultConfig())
+	httpServer := httptransport.NewHTTPServer(*appInstanceName, *httpPort,
+		httptransport.NewHealthCheckHandler(),
+	)
+	httpServer.Start()
 
-	consulService, _ := connect.NewService(appName, consulClient)
-	defer consulService.Close()
+	httpHealthCheckAddr := fmt.Sprintf("%s:%s", *appInstanceName, *httpPort)
+	consulService, err := sd.NewConsulRegistration(*appInstanceName, httpHealthCheckAddr)
+	if err != nil {
+		panic(err)
+	}
 
 	db, err := storage.NewPersistence(*dataDir)
 	if err != nil {
@@ -61,28 +76,24 @@ func main() {
 	}
 	apiServer := server.NewAPIServer(db)
 
-	grpcTCPListener, err := tcp.NewTCPListener(*grpcPort, consulService.ServerTLSConfig())
+	grpcTCPListener, err := tcp.NewTCPListener(*grpcPort, consulService.Service.ServerTLSConfig())
 	if err != nil {
 		panic(err)
 	}
-	grpcServer := grpctransport.NewGRPCServer(appName, *grpcPort, grpcTCPListener)
-	grpcServer.Start(func(s *grpc.Server) {
+	grpcServer := grpctransport.NewGRPCServer(*appInstanceName, *grpcPort, grpcTCPListener, func(s *grpc.Server) {
 		pb.RegisterPrometheusServiceServer(s, apiServer)
 	})
-	//
-	//httpServer := httptransport.StartHTTPServer(*httpPort,
-	//	httptransport.NewHealthCheckHandler(),
-	//)
+	grpcServer.Start()
 
-	tcpListener, err := tcp.NewTCPListener(*tcpPort, consulService.ServerTLSConfig())
+	tcpListener, err := tcp.NewTCPListener(*tcpPort, consulService.Service.ServerTLSConfig())
 	if err != nil {
 		panic(err)
 	}
-	tcpServer := tcp.NewTCPServer(appName, *tcpPort, tcpListener)
+	tcpServer := tcp.NewTCPServer(*appInstanceName, *tcpPort, tcpListener)
 	tcpServer.Accept(apiServer.ProcessMetrics)
 
 	transport.WaitForShutdownSignal()
 
 	grpcServer.Shutdown()
-	//httptransport.ShutdownHTTPServer(appName, httpServer)
+	httpServer.Shutdown()
 }

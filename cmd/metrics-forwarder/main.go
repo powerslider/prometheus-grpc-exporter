@@ -1,7 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	cli "github.com/jawher/mow.cli"
+	"github.com/powerslider/prometheus-grpc-exporter/pkg/transport"
+	httptransport "github.com/powerslider/prometheus-grpc-exporter/pkg/transport/http"
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/transport/tcp"
 )
 
@@ -19,13 +24,31 @@ func main() {
 		EnvVar: "FORWARD_LOCAL_PORT",
 	})
 
-	remoteAddr := app.String(cli.StringOpt{
-		Name:   "remote-addr",
-		Value:  "prometheus-api-server",
-		Desc:   "Remote Address",
-		EnvVar: "FORWARD_REMOTE_ADDR",
+	httpPort := app.String(cli.StringOpt{
+		Name:   "http-port",
+		Value:  "8080",
+		Desc:   "HTTP Port to listen on",
+		EnvVar: "APP_HTTP_PORT",
 	})
 
-	forwarder := tcp.NewTCPForwarder(appName, *localPort, *remoteAddr)
+	remoteAddresses := app.String(cli.StringOpt{
+		Name:   "forward-remote-addresses",
+		Value:  "prometheus-api-server-1;prometheus-api-server-2",
+		Desc:   "Remote Address",
+		EnvVar: "FORWARD_REMOTE_ADDRESSES",
+	})
+
+	httpServer := httptransport.NewHTTPServer(appName, *httpPort,
+		httptransport.NewHealthCheckHandler(),
+	)
+	httpServer.Start()
+
+	addrs := strings.Split(*remoteAddresses, ";")
+	httpHealthCheckAddr := fmt.Sprintf("%s:%s", appName, *httpPort)
+	forwarder := tcp.NewTCPForwarder(appName, *localPort, addrs, httpHealthCheckAddr)
 	forwarder.Accept()
+
+	transport.WaitForShutdownSignal()
+
+	httpServer.Shutdown()
 }

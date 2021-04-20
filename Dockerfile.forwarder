@@ -1,7 +1,7 @@
 FROM golang:1 as builder
 
 ENV ROOT_PROJECT=prometheus-grpc-exporter
-ENV PROJECT=tcp-forwarder
+ENV PROJECT=metrics-forwarder
 
 ENV ORG_PATH="github.com/powerslider"
 ENV SRC_FOLDER="${GOPATH}/src/${ORG_PATH}/${ROOT_PROJECT}"
@@ -26,6 +26,6 @@ WORKDIR /
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /bin/* /
 
-EXPOSE 9999
+EXPOSE 8080 9999
 
-CMD [ "/tcp-forwarder" ]
+CMD [ "/metrics-forwarder" ]

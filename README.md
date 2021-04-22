@@ -3,6 +3,53 @@
 ## Architecture
 ![image](images/architecture.png)
 
+## Components
+
+### External Prometheus
+
+- Standard Prometheus instance configured to scrape it own metrics.
+
+### prometheus-remote-receiver
+
+- Application serving as the `remote-write` path for Prometheus.
+- Gathers dumped metrics from Prometheus and forwards them to 
+  `metrics-forwarder` service.  
+
+### metrics-forwarder
+
+- TCP forwarder service.
+- Receives scraped Prometheus metrics from `prometheus-remote-receiver` 
+  via TCP and forwards them to all API server instances via TCP at the 
+  same time.
+  
+### prometheus-api-server
+
+- Main service that receives scraped Prometheus metrics from `metrics-forwarder` 
+  via TCP, processes them and stores them to timestamped files with a `latest` 
+  symlink attached to the latest one.
+- This service has two instances that are both identical, but with separate 
+  storages. 
+  
+## HAProxy
+
+- HAProxy serves here as a gRPC load balancer that distributes traffic from 
+  `prometheus-grpc-client` between all instances of `prometheus-api-server`.
+- Internally it uses Consul as a DNS resolver by utilizing the SRV DNS record.
+
+## prometheus-grpc-client
+
+- A gRPC client for `prometheus-api-server` which is also a gRPC server.
+- Calls HAProxy which forwards to one of the API server instances.
+- Performs a `GetMetrics` RPC call which returns a stream of Prometheus `TimeSeries`.
+  
+## Consul
+
+- External component used as client side service discovery.
+- `metrics-forwarder` and all instances of `prometheus-api-server` are registered 
+to Consul.
+- `HAProxy` uses it as a DNS resolver.
+
+
 ## Deployment
 
 ### Local Setup
@@ -31,6 +78,9 @@ make build-client
 # Builds prometheus-remote-receiver.
 make build-remote-receiver
 
+# Builds metrics-forwarder.
+make build-forwarder
+
 # Regenerates Protocol Buffers and gRPC stubs.
 make generate
 ```
@@ -44,10 +94,7 @@ docker-compose up -d
 **Step 2.** Open http://localhost:8500 to monitor Consul web UI.
 ![image](images/consul.png)
 
-**Step 3.** Open http://localhost:9998 to monitor Fabio web UI.
-![image](images/fabio.png)
-
-**Step 4.** Check the logs of `prometheus-grpc-client` in order to see Prometheus metrics printed to stdout:
+**Step 3.** Check the logs of `prometheus-grpc-client` in order to see Prometheus metrics printed to stdout:
 
 ```shell script
 docker-compose logs --follow prometheus-grpc-client

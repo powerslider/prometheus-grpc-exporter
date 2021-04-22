@@ -51,6 +51,7 @@ services:
       dataplane:
         ipv4_address: "10.0.0.60"
 
+
   consul-server-bootstrap:
     <<: *consul-agent
     ports:
@@ -66,7 +67,7 @@ services:
     command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
 
   haproxy:
-    image: haproxy
+    image: haproxy:lts-alpine
     volumes:
       - "./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg"
 #      - "./haproxy/creds/haproxy.pem:/usr/local/etc/haproxy/pem/haproxy.pem"

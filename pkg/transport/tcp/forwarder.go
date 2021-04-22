@@ -6,9 +6,6 @@ import (
 	"net"
 
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/sd"
-
-	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/connect"
 )
 
 type Forwarder struct {
@@ -27,9 +24,9 @@ func NewTCPForwarder(name string, localAddr string, remoteAddresses []string, he
 	}
 }
 
-func (f *Forwarder) forward(serverConn net.Conn, remoteAddr string, consulService *connect.Service, consulClient *api.Client) {
+func (f *Forwarder) forward(serverConn net.Conn, remoteAddr string, consulService *sd.Consul) {
 	client := NewTCPClient(remoteAddr)
-	client.ConsulConnect(consulService, consulClient, func(clientConn net.Conn) {
+	client.ConsulConnect(consulService, func(clientConn net.Conn) {
 		log.Printf("Forwarding from %v to %v\n", serverConn.LocalAddr(), clientConn.RemoteAddr())
 		go func() {
 			defer clientConn.Close()
@@ -58,7 +55,7 @@ func (f *Forwarder) Accept() {
 
 	server.Accept(func(conn net.Conn) {
 		for _, address := range f.RemoteAddresses {
-			go f.forward(conn, address, consulService.Service, consulService.Client)
+			go f.forward(conn, address, consulService)
 		}
 	})
 }

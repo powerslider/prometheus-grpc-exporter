@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/hashicorp/consul/api"
+	"github.com/powerslider/prometheus-grpc-exporter/pkg/sd"
 
 	"github.com/hashicorp/consul/connect"
 )
@@ -32,14 +32,14 @@ func (c *Client) Connect(clientProcessingFunc ClientProcessor) {
 	clientProcessingFunc(conn)
 }
 
-func (c *Client) ConsulConnect(consulService *connect.Service, consulClient *api.Client, clientProcessingFunc ClientProcessor) {
-	conn, err := consulService.Dial(context.Background(), &connect.ConsulResolver{
-		Client: consulClient,
+func (c *Client) ConsulConnect(consul *sd.Consul, clientProcessingFunc ClientProcessor) {
+	conn, err := consul.Service.Dial(context.Background(), &connect.ConsulResolver{
+		Client: consul.Client,
 		Name:   c.ServerAddr,
 	})
 	log.Printf("Dialed %s", c.ServerAddr)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	defer conn.Close()

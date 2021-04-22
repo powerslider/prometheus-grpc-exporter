@@ -25,11 +25,18 @@ const (
 func main() {
 	app := cli.App(defaultAppName, "")
 
-	appInstanceName := app.String(cli.StringOpt{
+	appServiceName := app.String(cli.StringOpt{
 		Name:   "app-name",
 		Value:  defaultAppName,
 		Desc:   "Application Instance Name",
-		EnvVar: "APP_INSTANCE_NAME",
+		EnvVar: "APP_SERVICE_NAME",
+	})
+
+	appInstanceQualifier := app.String(cli.StringOpt{
+		Name:   "app-qualifier",
+		Value:  "0",
+		Desc:   "Application Instance Qualifier",
+		EnvVar: "APP_INSTANCE_QUALIFIER",
 	})
 	grpcPort := app.String(cli.StringOpt{
 		Name:   "grpc-port",
@@ -59,13 +66,14 @@ func main() {
 		EnvVar: "APP_INSTANCE_DATA_DIR",
 	})
 
-	httpServer := httptransport.NewHTTPServer(*appInstanceName, *httpPort,
+	appInstanceName := fmt.Sprintf("%s-%s", *appServiceName, *appInstanceQualifier)
+	httpHealthCheckAddr := fmt.Sprintf("%s:%s", appInstanceName, *httpPort)
+	httpServer := httptransport.NewHTTPServer(appInstanceName, *httpPort,
 		httptransport.NewHealthCheckHandler(),
 	)
 	httpServer.Start()
 
-	httpHealthCheckAddr := fmt.Sprintf("%s:%s", *appInstanceName, *httpPort)
-	consulService, err := sd.NewConsulRegistration(*appInstanceName, httpHealthCheckAddr)
+	consulService, err := sd.NewConsulRegistration(*appServiceName, httpHealthCheckAddr)
 	if err != nil {
 		panic(err)
 	}
@@ -80,7 +88,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	grpcServer := grpctransport.NewGRPCServer(*appInstanceName, *grpcPort, grpcTCPListener, func(s *grpc.Server) {
+	grpcServer := grpctransport.NewGRPCServer(appInstanceName, *grpcPort, grpcTCPListener, func(s *grpc.Server) {
 		pb.RegisterPrometheusServiceServer(s, apiServer)
 	})
 	grpcServer.Start()
@@ -89,7 +97,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	tcpServer := tcp.NewTCPServer(*appInstanceName, *tcpPort, tcpListener)
+	tcpServer := tcp.NewTCPServer(appInstanceName, *tcpPort, tcpListener)
 	tcpServer.Accept(apiServer.ProcessMetrics)
 
 	transport.WaitForShutdownSignal()

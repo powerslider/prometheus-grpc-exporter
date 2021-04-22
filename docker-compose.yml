@@ -10,24 +10,70 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
-      - dataplane
+      dataplane:
+        ipv4_address: "10.0.0.8"
+    extra_hosts:
+      - "prometheus-remote-receiver:10.0.0.9"
     depends_on:
       - prometheus-remote-receiver
 
-  consul-server:
+  consul-agent-1: &consul-agent
     image: consul:1.9.5
-    container_name: consul-server
-    restart: always
     volumes:
-      - ./consul:/consul/config
+      - "./consul:/consul/config"
     networks:
-      - dataplane
+      dataplane:
+        ipv4_address: "10.0.0.20"
+    command: "agent -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-agent-2:
+    <<: *consul-agent
+    networks:
+      dataplane:
+        ipv4_address: "10.0.0.30"
+
+  consul-agent-3:
+    <<: *consul-agent
+    networks:
+      dataplane:
+        ipv4_address: "10.0.0.40"
+
+  consul-server-1: &consul-server
+    <<: *consul-agent
+    networks:
+      dataplane:
+        ipv4_address: "10.0.0.50"
+    command: "agent -server -retry-join consul-server-bootstrap -client 0.0.0.0"
+
+  consul-server-2:
+    <<: *consul-server
+    networks:
+      dataplane:
+        ipv4_address: "10.0.0.60"
+
+  consul-server-bootstrap:
+    <<: *consul-agent
     ports:
+      - "8400:8400"
       - "8500:8500"
-      - "8502:8502"
-      - "8600:8600/tcp"
+      - "8600:8600"
       - "8600:8600/udp"
-    command: "agent"
+    volumes:
+    - "./consul:/consul/config"
+    networks:
+      dataplane:
+        ipv4_address: "10.0.0.70"
+    command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
+
+  haproxy:
+    image: haproxy
+    volumes:
+      - "./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg"
+#      - "./haproxy/creds/haproxy.pem:/usr/local/etc/haproxy/pem/haproxy.pem"
+#      - "./haproxy/creds/server.crt:/usr/local/etc/haproxy/pem/server.crt"
+    networks:
+      dataplane:
+        ipv4_address: "10.0.0.80"
     depends_on:
       - prometheus-api-server-1
       - prometheus-api-server-2
@@ -40,12 +86,16 @@ services:
     container_name: metrics-forwarder
     environment:
       FORWARD_REMOTE_ADDRESSES: "prometheus-api-server-1;prometheus-api-server-2"
-      CONSUL_HTTP_ADDR: "consul-server:8500"
+      CONSUL_HTTP_ADDR: "consul-server-bootstrap:8500"
     networks:
-      - dataplane
+      dataplane:
+        ipv4_address: "10.0.0.12"
+    extra_hosts:
+      - "consul-server-bootstrap:10.0.0.70"
     ports:
       - "8083:8080"
     depends_on:
+      - consul-server-bootstrap
       - prometheus-api-server-1
       - prometheus-api-server-2
 
@@ -56,7 +106,8 @@ services:
     image: prometheus-remote-receiver:local
     container_name: prometheus-remote-receiver
     networks:
-      - dataplane
+      dataplane:
+        ipv4_address: "10.0.0.9"
     ports:
       - "8080:8080"
     depends_on:
@@ -72,40 +123,60 @@ services:
     image: prometheus-api-server:local
     container_name: prometheus-api-server-1
     environment:
-      APP_INSTANCE_NAME: "prometheus-api-server-1"
+      APP_INSTANCE_QUALIFIER: "1"
+      APP_SERVICE_NAME: "prometheus-api-server"
       APP_INSTANCE_DATA_DIR: "/tmp/metrics-store-1"
-      CONSUL_HTTP_ADDR: "consul-server:8500"
+      CONSUL_HTTP_ADDR: "consul-server-bootstrap:8500"
     networks:
-      - dataplane
+      dataplane:
+        ipv4_address: "10.0.0.10"
+    extra_hosts:
+      - "consul-server-bootstrap:10.0.0.70"
     ports:
       - "8081:8080"
       - "8091:8090"
       - "8071:8070"
+    depends_on:
+      - consul-server-bootstrap
 
   prometheus-api-server-2:
     image: prometheus-api-server:local
     container_name: prometheus-api-server-2
     environment:
-      APP_INSTANCE_NAME: "prometheus-api-server-2"
+      APP_INSTANCE_QUALIFIER: "2"
+      APP_SERVICE_NAME: "prometheus-api-server"
       APP_INSTANCE_DATA_DIR: "/tmp/metrics-store-2"
-      CONSUL_HTTP_ADDR: "consul-server:8500"
+      CONSUL_HTTP_ADDR: "consul-server-bootstrap:8500"
     networks:
-      - dataplane
+      dataplane:
+        ipv4_address: "10.0.0.11"
+    extra_hosts:
+      - "consul-server-bootstrap:10.0.0.70"
     ports:
       - "8082:8080"
       - "8092:8090"
       - "8072:8070"
+    depends_on:
+      - consul-server-bootstrap
 
-#  prometheus-grpc-client:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.client
-#    image: prometheus-grpc-client:local
-#    container_name: prometheus-grpc-client
-#    depends_on:
-#      - prometheus-api-server-1
-#      - prometheus-api-server-2
+  prometheus-grpc-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    image: prometheus-grpc-client:local
+    container_name: prometheus-grpc-client
+    networks:
+      dataplane:
+        ipv4_address: "10.0.0.14"
+    extra_hosts:
+      - "haproxy:10.0.0.80"
+    depends_on:
+      - haproxy
 
 networks:
   dataplane:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "10.0.0.1/16"

@@ -37,7 +37,7 @@ func (s *ServerWrapper) Start() {
 			log.Printf("HTTP server closing with message: %v", err)
 		}
 	}()
-	log.Printf("[Start] HTTP server on port %s started\n", s.Port)
+	log.Printf("[Start] %s HTTP server on port %s started\n", s.Name, s.Port)
 }
 
 func (s *ServerWrapper) Shutdown() {

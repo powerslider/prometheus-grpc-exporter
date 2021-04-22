@@ -6,31 +6,15 @@ import (
 
 	"google.golang.org/grpc"
 
-	"google.golang.org/grpc/resolver"
-
 	cli "github.com/jawher/mow.cli"
-	_ "github.com/mbobakov/grpc-consul-resolver"
 	"github.com/powerslider/prometheus-grpc-exporter/pkg/api/client"
 	pb "github.com/powerslider/prometheus-grpc-exporter/proto"
-	"github.com/simplesurance/grpcconsulresolver/consul"
 )
 
 const appName = "prometheus-grpc-client"
 
-func init() {
-	// Register the consul consul at the grpc-go library
-	resolver.Register(consul.NewBuilder())
-}
-
 func main() {
 	app := cli.App(appName, "")
-
-	//consulHost := app.String(cli.StringOpt{
-	//	Name:   "consul-host",
-	//	Value:  "consul-server:8500",
-	//	Desc:   "Consul Host Address",
-	//	EnvVar: "CONSUL_HOST",
-	//})
 
 	subscribedMetric := app.String(cli.StringOpt{
 		Name:   "subscribed-metric",
@@ -39,12 +23,19 @@ func main() {
 		EnvVar: "SUBSCRIBED_METRIC",
 	})
 
+	lbAddr := app.String(cli.StringOpt{
+		Name:   "lb-addr",
+		Value:  "haproxy:8090",
+		Desc:   "Haproxy gRPC LB Address",
+		EnvVar: "LB_ADDR",
+	})
+
+	//rr := grpc.RoundRobin(grpcsrvlb.New(srv.NewGoResolver(2 * time.Second)))
+	//conn, err := grpc.Dial("grpc.my_service.my_cluster.internal.example.com", grpc.WithBalancer(rr))
 	// dial server
-	//connStr := fmt.Sprintf("consul://%s/prometheus-api-server-1", *consulHost)
-	//conn, err := grpc.Dial(connStr, grpc.WithInsecure(), grpc.WithBalancerName("round_robin"))
-	conn, err := grpc.Dial("localhost:8090", grpc.WithInsecure())
+	conn, err := grpc.Dial(*lbAddr, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("can not connect with server %v", err)
+		log.Fatalf("cannot connect to server %v", err)
 	}
 
 	// create stream

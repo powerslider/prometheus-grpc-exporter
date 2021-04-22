@@ -15,14 +15,15 @@ require (
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
+	github.com/improbable-eng/go-srvlb v0.0.0-20180110173540-25c0d99dd8c2
 	github.com/jawher/mow.cli v1.2.0
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/mbobakov/grpc-consul-resolver v1.4.3
+	github.com/mbobakov/grpc-consul-resolver v1.4.3 // indirect
 	github.com/miekg/dns v1.1.41 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/prometheus/prometheus v2.5.0+incompatible
-	github.com/simplesurance/grpcconsulresolver v1.2.2
+	github.com/simplesurance/grpcconsulresolver v1.2.2 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	google.golang.org/genproto v0.0.0-20210319143718-93e7006c17a6 // indirect

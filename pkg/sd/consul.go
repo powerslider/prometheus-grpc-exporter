@@ -7,12 +7,12 @@ import (
 	"github.com/hashicorp/consul/connect"
 )
 
-type ConsulService struct {
+type Consul struct {
 	Client  *api.Client
 	Service *connect.Service
 }
 
-func NewConsulRegistration(serviceName string, httpHealthCheckAddr string) (*ConsulService, error) {
+func NewConsulRegistration(serviceName string, httpHealthCheckAddr string) (*Consul, error) {
 	// Create a Consul API client
 	consulClient, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
@@ -23,6 +23,7 @@ func NewConsulRegistration(serviceName string, httpHealthCheckAddr string) (*Con
 		Check: &api.AgentServiceCheck{
 			HTTP:     fmt.Sprintf("http://%s/__health", httpHealthCheckAddr),
 			Interval: "10s",
+			Status:   api.HealthPassing,
 		}}
 
 	if err := consulClient.Agent().ServiceRegister(serviceDef); err != nil {
@@ -35,7 +36,7 @@ func NewConsulRegistration(serviceName string, httpHealthCheckAddr string) (*Con
 	}
 	defer consulService.Close()
 
-	return &ConsulService{
+	return &Consul{
 		Client:  consulClient,
 		Service: consulService,
 	}, nil

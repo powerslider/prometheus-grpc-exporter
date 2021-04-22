@@ -48,7 +48,7 @@ func (f *Forwarder) Accept() {
 		return
 	}
 	server := NewTCPServer(f.Name, f.LocalAddr, listener)
-	consulService, err := sd.NewConsulRegistration(f.Name, f.HealtcheckAddr)
+	consulService, err := sd.NewConsulRegistration(f.Name, f.Name, f.HealtcheckAddr)
 	if err != nil {
 		log.Fatalf("Error registering %s with Consul server: %v", f.Name, err)
 	}

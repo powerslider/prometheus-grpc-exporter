@@ -73,7 +73,7 @@ func main() {
 	)
 	httpServer.Start()
 
-	consulService, err := sd.NewConsulRegistration(*appServiceName, httpHealthCheckAddr)
+	consulService, err := sd.NewConsulRegistration(*appServiceName, appInstanceName, httpHealthCheckAddr)
 	if err != nil {
 		panic(err)
 	}
